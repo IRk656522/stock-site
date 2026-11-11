@@ -1,0 +1,33 @@
+name: 往回補資料
+# 修改 backfill.json 的 from / to 並推上來就會執行；已抓過的日期自動跳過，中斷了再推一次會接續。
+on:
+  push:
+    paths: ['backfill.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: site
+  cancel-in-progress: false
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node --test test/parse.test.js
+      - name: 往回抓
+        run: |
+          FROM=$(node -p "require('./backfill.json').from")
+          TO=$(node -p "require('./backfill.json').to")
+          node scripts/fetch.js --from "$FROM" --to "$TO" --max-minutes 300 --delay 4000 2>&1 | tee data/last-run.log
+      - name: 提交
+        if: always()
+        run: |
+          node build.js || true
+          git config user.name "stock-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data dist
+          git diff --cached --quiet || (git commit -m "往回補資料 $(node -p "require('./backfill.json').from")～$(node -p "require('./backfill.json').to")" && git pull --rebase && git push)

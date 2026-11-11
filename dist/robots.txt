@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://stock.baohong.com.tw/sitemap.xml
