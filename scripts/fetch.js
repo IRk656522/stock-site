@@ -22,7 +22,7 @@ const UA = 'Mozilla/5.0 (compatible; stock.baohong.com.tw daily summary)';
 async function getJSON(url) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(60000) });
       const text = await res.text();
       if (!res.ok) throw new Error('HTTP ' + res.status);
       try { return JSON.parse(text); } catch { throw new Error('非 JSON 回應（可能被暫時封鎖）：' + text.slice(0, 80)); }
