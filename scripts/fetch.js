@@ -13,7 +13,11 @@ const FORCE_DAYS = +arg('force-days', 0); // 最近 N 天即使已有資料也�
 const DELAY = +arg('delay', 3500), MAX_MS = +arg('max-minutes', 300) * 60e3;
 const DIR = path.join(__dirname, '..', 'data', 'daily');
 const HOL = path.join(__dirname, '..', 'data', 'holidays.json');
+const QDIR = path.join(__dirname, '..', 'data', 'quotes');
 fs.mkdirSync(DIR, { recursive: true });
+fs.mkdirSync(QDIR, { recursive: true });
+const QHEAD = 'code,name,open,high,low,close,change,volume,value';
+const toCSV = q => [QHEAD, ...q.map(r => r.map(v => v ?? '').join(','))].join('\n') + '\n';
 const holidays = new Set(fs.existsSync(HOL) ? JSON.parse(fs.readFileSync(HOL, 'utf8')) : []);
 const today = taipeiToday();
 
@@ -45,9 +49,10 @@ function* days(from, to) {
   const t0 = Date.now();
   let got = 0, skipped = 0;
   for (const date of days(FROM, TO)) {
-    const file = path.join(DIR, date + '.json');
+    const file = path.join(DIR, date + '.json'), qfile = path.join(QDIR, date + '.csv');
     const recent = FORCE_DAYS > 0 && (Date.parse(today) - Date.parse(date)) / 864e5 < FORCE_DAYS;
-    if (!recent && (fs.existsSync(file) || holidays.has(date))) { skipped++; continue; }
+    if (!recent && (holidays.has(date) || (fs.existsSync(file) && fs.existsSync(qfile)))) { skipped++; continue; }
+    const onlyQuotes = !recent && fs.existsSync(file); // 舊資料只缺個股行情：只抓一份報表
     if (Date.now() - t0 > MAX_MS) { console.log('⏱ 到達時間上限，下次接續'); break; }
     const ymd = date.replace(/-/g, '');
     try {
@@ -60,6 +65,9 @@ function* days(from, to) {
         else console.log(`${date} 尚無資料`);
         continue;
       }
+      if (m.quotes?.length) fs.writeFileSync(qfile, toCSV(m.quotes));
+      delete m.quotes;
+      if (onlyQuotes) { got++; console.log(`${date} ✓ 補個股行情`); continue; }
       const bf = await getJSON(`https://www.twse.com.tw/rwd/zh/fund/BFI82U?type=day&dayDate=${ymd}&response=json`);
       await sleep(DELAY);
       const inst = parseBFI82U(bf);

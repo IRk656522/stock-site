@@ -73,7 +73,15 @@ function parseMiIndex(j) {
   // 個股收盤行情 → 漲跌幅、成交金額排行（只取一般股票：4 碼、非 00 開頭 ETF）
   const qt = T.find(t => /每日收盤行情/.test(t.title)) || T.find(t => col(t.fields, /證券代號/) >= 0 && col(t.fields, /收盤價/) >= 0);
   if (qt) {
-    const f = qt.fields, I = { code: col(f, /證券代號/), name: col(f, /證券名稱/), val: col(f, /成交金額/), close: col(f, /收盤價/), sign: col(f, /漲跌\(\+\/-\)/), diff: col(f, /漲跌價差/) };
+    const f = qt.fields, I = { code: col(f, /證券代號/), name: col(f, /證券名稱/), vol: col(f, /成交股數/), val: col(f, /成交金額/), open: col(f, /開盤價/), high: col(f, /最高價/), low: col(f, /最低價/), close: col(f, /收盤價/), sign: col(f, /漲跌\(\+\/-\)/), diff: col(f, /漲跌價差/) };
+    // 全部個股＋ETF 日行情（不含權證等），存成 CSV 用
+    res.quotes = [];
+    for (const r of qt.data) {
+      const code = strip(r[I.code]);
+      if (!/^\d{4}$|^00\d{2,4}[A-Z]?$/.test(code)) continue;
+      const dd = num(r[I.diff]), sg = signOf(r[I.sign]);
+      res.quotes.push([code, strip(r[I.name]).replace(/,/g, ' '), num(r[I.open]), num(r[I.high]), num(r[I.low]), num(r[I.close]), dd == null ? null : r2(dd * sg), num(r[I.vol]), num(r[I.val])]);
+    }
     const rows = [];
     for (const r of qt.data) {
       const code = strip(r[I.code]);

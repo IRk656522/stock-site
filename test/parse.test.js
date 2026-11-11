@@ -49,3 +49,10 @@ test('BFI82U 舊格式（只有自營商一列）', () => {
   const b = parseBFI82U({ stat: 'OK', fields: ['單位名稱','買進金額','賣出金額','買賣差額'], data: [['自營商','1','1','100,000,000'],['投信','1','1','200,000,000'],['外資及陸資','1','1','-300,000,000'],['合計','1','1','0']] });
   assert.equal(b.dealer, 1); assert.equal(b.foreign, -3);
 });
+test('個股行情 quotes', () => {
+  const m = parseMiIndex(MI);
+  const tsmc = m.quotes.find(q => q[0] === '2330');
+  assert.deepEqual(tsmc, ['2330','台積電',2300,2395,2290,2395,110,40000000,95000000000]);
+  assert.equal(m.quotes.find(q => q[0] === '2314')[6], -5);
+  assert.ok(m.quotes.some(q => q[0] === '0050'));
+});
