@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>2026/11/04（三）台股小跌 359 點收 42,949 點｜台股每日行情</title>
-<meta name="description" content="加權指數小跌 358.63 點，收在 42,948.91 點（−0.83%）。外資賣超 1,499.00 億、投信買超 272.58 億，三大法人合計賣超 1,601.60 億。類股方面，油電燃氣漲 2.49% 表現最強，資訊服務跌 3.97% 最弱。今天收盤創近一年新高。">
+<meta name="description" content="加權指數小跌 358.63 點，收在 42,948.91 點（−0.83%）。外資賣超 1,499.00 億、投信買超 272.58 億，三大法人合計賣超 1,601.60 億。類股方面，油電燃氣漲 2.49% 表現最強，資訊服務跌 3.97% 最弱。指數從 06/22 的近一年高點 47,742 ">
 <link rel="canonical" href="https://stock.baohong.com.tw/2026-11-04">
 <meta property="og:title" content="2026/11/04（三）台股小跌 359 點收 42,949 點｜台股每日行情">
-<meta property="og:description" content="加權指數小跌 358.63 點，收在 42,948.91 點（−0.83%）。外資賣超 1,499.00 億、投信買超 272.58 億，三大法人合計賣超 1,601.60 億。類股方面，油電燃氣漲 2.49% 表現最強，資訊服務跌 3.97% 最弱。今天收盤創近一年新高。">
+<meta property="og:description" content="加權指數小跌 358.63 點，收在 42,948.91 點（−0.83%）。外資賣超 1,499.00 億、投信買超 272.58 億，三大法人合計賣超 1,601.60 億。類股方面，油電燃氣漲 2.49% 表現最強，資訊服務跌 3.97% 最弱。指數從 06/22 的近一年高點 47,742 ">
 <meta property="og:type" content="article">
 <meta property="og:locale" content="zh_TW">
 <link rel="stylesheet" href="/style.css">
@@ -20,20 +20,21 @@
 
 <h1>2026/11/04（三）台股小跌 358.63 點</h1>
 <p class="date">當日收盤整理</p>
-<div class="daynav"><span>←</span><a class="mid" href="/archive">📅 歷史</a><a class="nx" href="/2026-11-05">11/05 →</a></div>
+<div class="daynav"><a href="/2026-07-03">← 07/03</a><a class="mid" href="/archive">📅 歷史</a><a class="nx" href="/2026-11-05">11/05 →</a></div>
 <section class="card hero">
   <div class="kicker">加權指數收盤</div>
   <div class="idx" id="idx">42,948.91</div>
   <div class="chg down">▼ 358.63 點（−0.83%）</div>
-  <div class="summary">加權指數小跌 <b class="down">358.63</b> 點，收在 42,948.91 點（−0.83%）。外資賣超 1,499.00 億、投信買超 272.58 億，三大法人合計賣超 1,601.60 億。類股方面，油電燃氣漲 2.49% 表現最強，資訊服務跌 3.97% 最弱。今天收盤創近一年新高。</div>
+  <div class="summary">加權指數小跌 <b class="down">358.63</b> 點，收在 42,948.91 點（−0.83%）。外資賣超 1,499.00 億、投信買超 272.58 億，三大法人合計賣超 1,601.60 億。類股方面，油電燃氣漲 2.49% 表現最強，資訊服務跌 3.97% 最弱。指數從 06/22 的近一年高點 47,742 點一路跌到今天，累計跌了 10.0%。</div>
   <div class="tiles">
     <div class="tile"><div class="k">成交金額</div><div class="v" id="tVol">11,769 億</div></div>
-    <div class="tile"><div class="k">距近一年高點</div><div class="v ">新高</div></div>
+    <div class="tile"><div class="k">距近一年高點</div><div class="v down">-10.0%</div></div>
     <div class="tile"><div class="k">三大法人</div><div class="v down">−1,602 億</div></div>
   </div>
 </section>
 <div class="ad">廣告</div>
-
+<section class="card reveal"><div class="kicker">近期走勢</div><h2>近 60 個交易日加權指數</h2><p class="note">點圖可以跳到那一天的整理。</p><div id="lineChart"></div></section>
+<section class="card reveal"><div class="kicker">每天漲跌幾點</div><h2>每日漲跌點數</h2><p class="note">紅色上漲、綠色下跌（台股慣例）；框線是這一天。</p><div id="colChart"></div><div class="legend"><span><i class="sw" style="background:var(--up)"></i>上漲</span><span><i class="sw" style="background:var(--down)"></i>下跌</span></div></section>
 <section class="card reveal"><div class="kicker">漲跌家數</div><h2>上漲 <span class="up">438</span> 家 vs 下跌 <span class="down">544</span> 家</h2><p class="note">上市股票收盤漲跌家數。</p>
 <div class="breadth" role="img" aria-label="上漲 438 家、平盤 99 家、下跌 544 家" id="breadth"><div class="u" data-w="40.52" data-tip="&lt;b>上漲 438 家&lt;/b>占 40.5%"></div><div class="f" data-w="9.16" data-tip="&lt;b>平盤 99 家&lt;/b>占 9.2%"></div><div class="d" data-w="50.32" data-tip="&lt;b>下跌 544 家&lt;/b>占 50.3%"></div></div>
 <div class="blabels"><span class="up">上漲 <b>438</b><small>漲停 20</small></span><span style="color:var(--text-muted)">平盤 <b>99</b></span><span class="down" style="text-align:right">下跌 <b>544</b><small>跌停 2</small></span></div></section>
@@ -55,7 +56,7 @@
 </footer>
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
-<script>window.P={"date":"2026-11-04","close":42948.91,"turnover":11769.3,"hist":[["2026-11-04",42948.91]]}</script>
+<script>window.P={"date":"2026-11-04","close":42948.91,"turnover":11769.3,"hist":[["2026-04-10",35417.83],["2026-04-13",35457.29],["2026-04-14",36296.12],["2026-04-15",36722.14],["2026-04-16",37132.02],["2026-04-17",36804.34],["2026-04-20",36958.8],["2026-04-21",37605.11],["2026-04-22",37878.47],["2026-04-23",37714.15],["2026-04-24",38932.4],["2026-04-27",39616.63],["2026-04-28",39521.73],["2026-04-29",39303.5],["2026-04-30",38926.63],["2026-05-04",40705.14],["2026-05-05",40769.29],["2026-05-06",41138.85],["2026-05-07",41933.78],["2026-05-08",41603.94],["2026-05-11",41790.06],["2026-05-12",41898.32],["2026-05-13",41374.5],["2026-05-14",41751.75],["2026-05-15",41172.36],["2026-05-18",40891.82],["2026-05-19",40175.56],["2026-05-20",40020.82],["2026-05-21",41368.21],["2026-05-22",42267.97],["2026-05-25",43644.4],["2026-05-26",43525.37],["2026-05-27",44256.8],["2026-05-28",43636.44],["2026-05-29",44732.94],["2026-06-01",45337.91],["2026-06-02",45557.31],["2026-06-03",46459.16],["2026-06-04",45677.46],["2026-06-05",45070.94],["2026-06-08",43502.78],["2026-06-09",44704.44],["2026-06-10",43225.54],["2026-06-11",43149.46],["2026-06-12",44169.04],["2026-06-15",45396.99],["2026-06-16",45809.19],["2026-06-17",45877.39],["2026-06-18",46465.2],["2026-06-22",47741.51],["2026-06-23",47100.65],["2026-06-24",46043.6],["2026-06-25",46255.26],["2026-06-26",44571.76],["2026-06-29",44999.9],["2026-06-30",46125.91],["2026-07-01",47018.99],["2026-07-02",46744.16],["2026-07-03",46780.62],["2026-11-04",42948.91]]}</script>
 <script src="/page.js" defer></script>
 </body>
 </html>
