@@ -18,8 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: node --test test/parse.test.js
-      - name: 抓最近 7 天（補漏）
-        run: node scripts/fetch.js --from "$(TZ=Asia/Taipei date -d '7 days ago' +%F)" --to "$(TZ=Asia/Taipei date +%F)" 2>&1 | tee data/last-run.log
+      - name: 抓最近 7 天補漏，最近 3 天重抓（證交所盤後數字會更新）
+        run: node scripts/fetch.js --from "$(TZ=Asia/Taipei date -d '7 days ago' +%F)" --to "$(TZ=Asia/Taipei date +%F)" --force-days 3 2>&1 | tee data/last-run.log
       - run: node build.js
       - name: 提交
         run: |

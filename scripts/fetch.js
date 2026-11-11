@@ -9,6 +9,7 @@ const { parseMiIndex, parseBFI82U } = require('./twse');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const taipeiToday = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
 const FROM = arg('from', taipeiToday()), TO = arg('to', FROM);
+const FORCE_DAYS = +arg('force-days', 0); // 最近 N 天即使已有資料也重抓（盤後數字會更新）
 const DELAY = +arg('delay', 3500), MAX_MS = +arg('max-minutes', 300) * 60e3;
 const DIR = path.join(__dirname, '..', 'data', 'daily');
 const HOL = path.join(__dirname, '..', 'data', 'holidays.json');
@@ -45,7 +46,8 @@ function* days(from, to) {
   let got = 0, skipped = 0;
   for (const date of days(FROM, TO)) {
     const file = path.join(DIR, date + '.json');
-    if (fs.existsSync(file) || holidays.has(date)) { skipped++; continue; }
+    const recent = FORCE_DAYS > 0 && (Date.parse(today) - Date.parse(date)) / 864e5 < FORCE_DAYS;
+    if (!recent && (fs.existsSync(file) || holidays.has(date))) { skipped++; continue; }
     if (Date.now() - t0 > MAX_MS) { console.log('⏱ 到達時間上限，下次接續'); break; }
     const ymd = date.replace(/-/g, '');
     try {

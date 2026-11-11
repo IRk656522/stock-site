@@ -27,6 +27,9 @@ function tablesOf(j) {
 const findTable = (tables, re) => tables.find(t => re.test(t.title || ''));
 const col = (fields, re) => (fields || []).findIndex(f => re.test(strip(f)));
 
+// 這幾個是把多個類股合起來的綜合指數，跟細類重複，排行時排除
+const COMPOSITE = /^(水泥窯製|塑膠化工|機電|化學生技醫療|電子工業)類指數$/;
+
 function parseMiIndex(j) {
   if (!j || (j.stat && j.stat !== 'OK')) return null;
   const T = tablesOf(j);
@@ -45,7 +48,7 @@ function parseMiIndex(j) {
   const main = px.data.find(r => strip(r[0]) === '發行量加權股價指數');
   Object.assign(res, rowVal(main));
   res.sectors = px.data
-    .filter(r => /類指數$/.test(strip(r[0])) && !/未含|不含|報酬/.test(strip(r[0])))
+    .filter(r => /類指數$/.test(strip(r[0])) && !/未含|不含|報酬/.test(strip(r[0])) && !COMPOSITE.test(strip(r[0])))
     .map(r => { const v = rowVal(r); return [strip(r[0]).replace(/類指數$/, ''), v.close, v.pct]; })
     .filter(r => r[2] != null);
 
