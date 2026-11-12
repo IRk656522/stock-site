@@ -60,10 +60,11 @@ function* days(from, to) {
       await sleep(DELAY);
       const m = parseMiIndex(mi);
       if (!m) {
-        // 沒資料：過去的日期視為休市；今天可能還沒公布，不記錄
-        if (date < today) { holidays.add(date); console.log(`${date} 休市`); }
-        else console.log(`${date} 尚無資料`);
-        continue;
+        // 只有證交所明確回「沒有符合條件的資料」才算休市；其他不完整的回應多半是被限流，停下來下次再抓
+        const noData = /沒有符合條件/.test(String(mi?.stat || ''));
+        if (noData && date < today && !fs.existsSync(file)) { holidays.add(date); console.log(`${date} 休市`); continue; }
+        if (noData) { console.log(`${date} 尚無資料`); continue; }
+        throw new Error('回應不完整（stat=' + String(mi?.stat).slice(0, 30) + '），可能被限流');
       }
       if (m.quotes?.length) fs.writeFileSync(qfile, toCSV(m.quotes));
       delete m.quotes;
