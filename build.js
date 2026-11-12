@@ -44,7 +44,7 @@ ${ld ? `<script type="application/ld+json">${JSON.stringify(ld)}</script>` : ''}
 </head>
 <body>
 <div class="wrap">
-<nav class="top"><a class="logo" href="/">📈 ${NAME}</a><span class="sp"></span><a href="/archive">歷史行情</a><a href="https://salary.baohong.com.tw/crash.html">股災專區</a></nav>
+<nav class="top"><a class="logo" href="/">📈 ${NAME}</a><span class="sp"></span><a href="/stock/">個股查詢</a><a href="/archive">歷史行情</a><a href="https://salary.baohong.com.tw/crash.html">股災專區</a></nav>
 ${body}
 <footer>
 <div class="disclaimer">本站資料整理自臺灣證券交易所公開盤後統計，僅供參考，不構成任何投資建議。投資前請自行判斷並承擔風險。</div>
@@ -85,7 +85,7 @@ function summary(d, i) {
 }
 
 const divRow = (label, v, unit, total) => `<div class="drow${total ? ' total' : ''}" data-v="${v}" data-tip="${esc(`<b>${label}</b><span class="${cls(v)}">${unit === '%' ? `${arrow(v)} ${Math.abs(v).toFixed(2)}%` : `${v >= 0 ? '買超' : '賣超'} ${fmt(Math.abs(v), 2)} 億元`}</span>`)}"><div class="lab">${label}</div><div class="track"><div class="bar ${v >= 0 ? 'pos' : 'neg'}"></div><div class="val">${sign(v)}${unit === '%' ? Math.abs(v).toFixed(2) : fmt(Math.abs(v), 2)}</div></div></div>`;
-const stockTable = (rows, k) => `<table><tr><th>股票</th><th class="num">收盤</th><th class="num">${k === 'v' ? '成交金額' : '漲跌幅'}</th></tr>${rows.map(r => `<tr><td>${esc(r[1])} <small style="color:var(--text-muted)">${r[0]}</small></td><td class="num">${fmt(r[2], 2)}</td><td class="num ${k === 'v' ? '' : cls(r[3])}">${k === 'v' ? fmt(r[4], 1) + ' 億' : sign(r[3]) + Math.abs(r[3]).toFixed(2) + '%'}</td></tr>`).join('')}</table>`;
+const stockTable = (rows, k) => `<table><tr><th>股票</th><th class="num">收盤</th><th class="num">${k === 'v' ? '成交金額' : '漲跌幅'}</th></tr>${rows.map(r => `<tr><td><a href="/stock/${r[0]}">${esc(r[1])}</a> <small style="color:var(--text-muted)">${r[0]}</small></td><td class="num">${fmt(r[2], 2)}</td><td class="num ${k === 'v' ? '' : cls(r[3])}">${k === 'v' ? fmt(r[4], 1) + ' 億' : sign(r[3]) + Math.abs(r[3]).toFixed(2) + '%'}</td></tr>`).join('')}</table>`;
 
 function dayPage(d, i, isHome) {
   const S = summary(d, i), prev = days[i - 1], next = days[i + 1];
@@ -162,7 +162,79 @@ ${AD}
   }));
 }
 
-const urls = ['', 'archive', ...days.map(d => d.date)];
+// ── 個股頁 ──
+const { loadQuotes, chartData, stats } = require('./scripts/stocks');
+const ONLY = arg('stocks', 'all');
+const QDATA = arg('quotes', 'data/quotes');
+const stocks = loadQuotes(QDATA, ONLY === 'all' ? null : new Set(ONLY.split(',')));
+const LATEST = days.at(-1)?.date;
+const stockUrls = [];
+fs.mkdirSync(path.join(OUT, 'stock'), { recursive: true });
+const px = n => n == null ? '—' : fmt(n, n < 100 ? 2 : n < 1000 ? 1 : 0).replace(/\.0$/, '');
+const pxd = n => n == null ? '—' : Number.isInteger(n) ? fmt(n) : fmt(n, 2); // 整數價不顯示 .00
+for (const s of stocks.values()) {
+  const R = s.rows; if (R.length < 2) continue;
+  const last = R.at(-1), prev = R.at(-2), st = stats(R);
+  const pct = last[5] / (last[4] - last[5]) * 100;
+  const isETF = /^00/.test(s.code);
+  fs.writeFileSync(path.join(OUT, 'stock', s.code + '.json'), JSON.stringify(chartData(R)));
+  const lastD = last[0];
+  const rec = (label, r, extra) => `<div class="tile"><div class="k">${label}</div><div class="v">${extra}</div><small><a href="/${r[0]}">${slash(r[0])}</a></small></div>`;
+  const recent = R.slice(-20).reverse();
+  const title = `${s.name}（${s.code}）股價｜今日行情、歷史走勢、歷年最高最低｜${NAME}`;
+  const firstYear = st.years.at(-1);
+  const body = `
+<h1>${esc(s.name)} <span class="code">${s.code}</span></h1>
+<p class="date">${isETF ? 'ETF' : '上市股票'}｜${slash(lastD)}（${wd(lastD)}）收盤${lastD < LATEST ? '｜<b>最後交易日（已下市或停止交易）</b>' : ''}</p>
+<section class="card">
+  <div class="quote"><span class="px">${pxd(last[4])}</span><span class="chg ${cls(last[5])}">${arrow(last[5])} ${pxd(Math.abs(last[5]))}（${sign(pct)}${Math.abs(pct).toFixed(2)}%）</span></div>
+  <p class="note" style="margin:6px 0 0">開 ${pxd(last[1])}　高 ${pxd(last[2])}　低 ${pxd(last[3])}　昨收 ${pxd(Math.round((last[4] - last[5]) * 100) / 100)}</p>
+  <div class="tiles">
+    <div class="tile"><div class="k">漲跌幅</div><div class="v ${cls(pct)}">${sign(pct)}${Math.abs(pct).toFixed(2)}%</div></div>
+    <div class="tile"><div class="k">成交量</div><div class="v">${fmt(last[6])} 張</div></div>
+    <div class="tile"><div class="k">距歷史高點</div><div class="v ${cls(last[4] - st.hi[4])}">${last[4] >= st.hi[4] ? '新高' : ((last[4] / st.hi[4] - 1) * 100).toFixed(1) + '%'}</div></div>
+  </div>
+  <p class="summary" style="margin:12px 0 0;font-size:15px;line-height:1.75">${esc(s.name)}今天收 ${pxd(last[4])} 元，${last[5] > 0 ? '上漲' : last[5] < 0 ? '下跌' : '平盤'}${last[5] ? ' ' + pxd(Math.abs(last[5])) + ' 元' : ''}。${R[0][0] <= '2017-01-05' ? '自 2017 年以來' : '自 ' + slash(R[0][0]) + ' 以來'}，收盤最高是 ${slash(st.hi[0])} 的 ${pxd(st.hi[4])} 元，最低是 ${slash(st.lo[0])} 的 ${pxd(st.lo[4])} 元。</p>
+</section>
+${AD}
+<section class="card"><div class="kicker">走勢</div><h2>${esc(s.name)}股價走勢</h2><p class="note">收盤價（未還原權息）。超過 1 年的部分以每週收盤顯示；點圖可跳到當天大盤整理。</p>
+<div class="rng" role="group" aria-label="期間"><button data-n="22" aria-pressed="false">1 月</button><button data-n="125" aria-pressed="false">6 月</button><button data-n="250" aria-pressed="true">1 年</button><button data-n="100000" aria-pressed="false">全部</button></div>
+<div id="stockChart" data-src="/stock/${s.code}.json"></div></section>
+<section class="card"><div class="kicker">紀錄</div><h2>歷史紀錄</h2><p class="note">資料期間 ${slash(R[0][0])} ～ ${slash(lastD)}，以收盤價計算。</p>
+<div class="recs">${rec('最高收盤', st.hi, pxd(st.hi[4]))}${rec('最低收盤', st.lo, pxd(st.lo[4]))}${st.up ? rec('單日最大漲幅', st.up.r, `<span class="up">+${st.up.p.toFixed(2)}%</span>`) : ''}${st.dn ? rec('單日最大跌幅', st.dn.r, `<span class="down">${st.dn.p.toFixed(2)}%</span>`) : ''}</div></section>
+${AD}
+<section class="card"><div class="kicker">歷年</div><h2>歷年股價表現</h2>
+<table><tr><th>年度</th><th class="num">最高</th><th class="num">最低</th><th class="num">年底收盤</th><th class="num">漲跌幅</th></tr>
+${st.years.map(Y => `<tr><td>${Y.y}${Y.partial && Y === firstYear && R[0][0] > '2017-01-05' ? '<small style="color:var(--text-muted)">（起）</small>' : ''}</td><td class="num">${px(Y.hi)}</td><td class="num">${px(Y.lo)}</td><td class="num">${px(Y.close)}</td><td class="num ${cls(Y.chg)}">${Y.chg == null ? '—' : sign(Y.chg) + Math.abs(Y.chg).toFixed(1) + '%'}</td></tr>`).join('')}</table>
+<p class="note" style="margin-top:8px">最高、最低為盤中價；${lastD.slice(0, 4)} 年為年初至今，收盤欄為最新收盤。</p></section>
+<section class="card"><div class="kicker">近期</div><h2>近 20 個交易日行情</h2>
+<table><tr><th>日期</th><th class="num">收盤</th><th class="num">漲跌</th><th class="num">成交量(張)</th></tr>
+${recent.map(r => `<tr><td><a href="/${r[0]}">${slash(r[0].slice(5))}（${wd(r[0])}）</a></td><td class="num">${pxd(r[4])}</td><td class="num ${cls(r[5])}">${sign(r[5])}${pxd(Math.abs(r[5]))}</td><td class="num">${fmt(r[6])}</td></tr>`).join('')}</table></section>
+${AD}`;
+  fs.writeFileSync(path.join(OUT, 'stock', s.code + '.html'), layout({
+    path: 'stock/' + s.code, title, desc: `${s.name}（${s.code}）${slash(lastD)} 收盤 ${pxd(last[4])} 元，${sign(pct)}${Math.abs(pct).toFixed(2)}%。歷史最高 ${pxd(st.hi[4])} 元（${slash(st.hi[0])}），附 2017 年以來股價走勢與歷年表現。`,
+    body, data: {}
+  }));
+  stockUrls.push('stock/' + s.code);
+}
+
+// 個股列表＋搜尋
+if (stocks.size) {
+  const list = [...stocks.values()].filter(x => x.rows.length >= 2).map(x => { const l = x.rows.at(-1); return [x.code, x.name, l[4], l[5] / (l[4] - l[5]) * 100, l[0]]; })
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  const latest = list.reduce((m, r) => r[4] > m ? r[4] : m, '');
+  const live = list.filter(r => r[4] === latest);
+  const body = `<h1>個股股價查詢</h1><p class="date">上市股票與 ETF，共 ${live.length} 檔｜${slash(latest)} 收盤</p>
+<section class="card"><input id="q" type="search" placeholder="輸入代號或名稱，例如 2330、台積電" style="width:100%;font-size:17px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);color:var(--text-primary)" autocomplete="off">
+<table id="tb" style="margin-top:8px"><tr><th>股票</th><th class="num">收盤</th><th class="num">漲跌幅</th></tr>
+${live.map(r => `<tr data-k="${r[0]} ${esc(r[1])}"><td><a href="/stock/${r[0]}">${esc(r[1])}</a> <small style="color:var(--text-muted)">${r[0]}</small></td><td class="num">${fmt(r[2], 2)}</td><td class="num ${cls(r[3])}">${sign(r[3])}${Math.abs(r[3]).toFixed(2)}%</td></tr>`).join('')}
+</table></section>
+<script>document.getElementById('q').addEventListener('input',function(e){var v=e.target.value.trim().toLowerCase();document.querySelectorAll('#tb tr[data-k]').forEach(function(r){r.hidden=v&&r.dataset.k.toLowerCase().indexOf(v)<0})})</script>`;
+  fs.writeFileSync(path.join(OUT, 'stock', 'index.html'), layout({ path: 'stock/', title: `個股股價查詢｜上市股票與 ETF 今日行情、歷史走勢｜${NAME}`, desc: `查詢上市股票與 ETF 的今日收盤、漲跌幅，以及 2017 年以來的歷史股價走勢。共 ${live.length} 檔。`, body }));
+  stockUrls.unshift('stock/');
+}
+
+const urls = ['', 'archive', ...days.map(d => d.date), ...stockUrls];
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${SITE}/${u}</loc><lastmod>${/^\d/.test(u) ? u : days.at(-1)?.date || ''}</lastmod></url>`).join('\n')}
@@ -170,4 +242,4 @@ ${urls.map(u => `  <url><loc>${SITE}/${u}</loc><lastmod>${/^\d/.test(u) ? u : da
 `);
 fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
 fs.writeFileSync(path.join(OUT, 'ads.txt'), `google.com, ${ADSENSE.replace('ca-', '')}, DIRECT, f08c47fec0942fa0\n`);
-console.log('built', days.length, 'days');
+console.log('built', days.length, 'days,', stockUrls.length, 'stocks');

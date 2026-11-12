@@ -90,3 +90,13 @@ footer a{color:var(--text-secondary)}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s,transform .6s}
 .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}.reveal{opacity:1;transform:none}}
+.rng{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.rng button{border:0;background:transparent;color:var(--text-secondary);padding:6px 12px;font-size:14px;cursor:pointer;font-family:inherit}
+.rng button[aria-pressed="true"]{background:var(--text-primary);color:var(--surface-1)}
+.quote{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.quote .px{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.quote .chg{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.recs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.recs .tile a{color:inherit}
+.recs .tile small{display:block;color:var(--text-muted);font-size:12px}
+.code{color:var(--text-muted);font-weight:400;font-size:.7em}

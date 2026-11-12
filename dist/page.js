@@ -97,3 +97,49 @@ document.querySelectorAll(".reveal").forEach(function(el){onView(el,function(){e
 var more=$("#secMore");if(more)more.addEventListener("click",function(){var el=$("#sectors");el.querySelectorAll(".drow[hidden]").forEach(function(r){r.hidden=false});more.remove();showDiv(el)});
 var lw=innerWidth;addEventListener("resize",function(){if(innerWidth===lw)return;lw=innerWidth;drawAll();[lc,cc,al].forEach(function(b){if(b)b.classList.add("shown")})});
 })();
+
+/* ---------- 個股走勢（價格＋成交量兩個面板，共用時間軸） ---------- */
+(function(){
+var box=document.getElementById("stockChart");if(!box)return;
+var fmt=function(n,d){return n.toLocaleString("zh-TW",{minimumFractionDigits:d||0,maximumFractionDigits:d||0})};
+var tip=document.getElementById("tip"),ALL=[],range=250;
+function showTip(h,x,y){tip.innerHTML=h;tip.style.display="block";var w=tip.offsetWidth;tip.style.left=Math.min(Math.max(8,x-w/2),innerWidth-w-8)+"px";tip.style.top=Math.max(8,y-tip.offsetHeight-12)+"px"}
+function draw(anim){
+  var H=range>=ALL.length?ALL:ALL.slice(-range),N=H.length;if(N<2)return;
+  var W=box.clientWidth||680,L=8,R=W<480?52:60,T=24,PH=W<480?200:240,G=14,VH=60,B=24,Hh=T+PH+G+VH+B;
+  var vals=H.map(function(h){return h[1]}),lo=Math.min.apply(0,vals),hi=Math.max.apply(0,vals),pad=(hi-lo)*.08||1;
+  var mn=lo-pad,mx=hi+pad,vmax=Math.max.apply(0,H.map(function(h){return h[2]}))||1;
+  var tt=H.map(function(h){return Date.parse(h[0])}),t0=tt[0],t1=tt[N-1];
+  var xs=function(i){return L+(tt[i]-t0)/(t1-t0)*(W-L-R)},ys=function(v){return T+(1-(v-mn)/(mx-mn))*PH},vy=T+PH+G;
+  var nice=function(v){var p=Math.pow(10,Math.floor(Math.log10(v)));return [1,2,2.5,5,10].map(function(m){return m*p}).find(function(s){return (mx-mn)/s<=5})};
+  var st=nice(mx-mn),s='<svg width="'+W+'" height="'+Hh+'" role="img" aria-label="股價走勢與成交量">';
+  for(var v=Math.ceil(mn/st)*st;v<=mx;v+=st)s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+ys(v)+'" y2="'+ys(v)+'" stroke="var(--grid)"/><text x="'+(W-R+6)+'" y="'+(ys(v)+4)+'" font-size="11" fill="var(--text-muted)">'+fmt(Math.abs(v)<1e-9?0:v,st<1?1:0)+'</text>';
+  var d="";H.forEach(function(h,i){d+=(i?"L":"M")+xs(i).toFixed(1)+","+ys(h[1]).toFixed(1)});
+  s+='<path class="larea" d="'+d+'L'+xs(N-1)+','+(T+PH)+'L'+xs(0)+','+(T+PH)+'Z"/><path class="lpath" pathLength="1" d="'+d+'"/>';
+  H.forEach(function(h,i){var g=Math.min(i?xs(i)-xs(i-1):1e9,i<N-1?xs(i+1)-xs(i):1e9),bw=Math.max(.8,Math.min(g-.6,12)),bh=h[2]/vmax*VH;
+    s+='<rect x="'+(xs(i)-bw/2)+'" y="'+(vy+VH-bh)+'" width="'+bw+'" height="'+Math.max(.5,bh)+'" fill="var(--flat)"/>'});
+  s+='<text x="'+(W-R+6)+'" y="'+(vy+10)+'" font-size="11" fill="var(--text-muted)">成交量</text>';
+  // 時間軸刻度：依期間長短用年、月或日
+  var span=(t1-t0)/864e5,nl=W<480?3:5,ticks=[];
+  if(span>900){for(var y=new Date(t0).getUTCFullYear()+1;Date.UTC(y,0,1)<=t1;y++)ticks.push([Date.UTC(y,0,1),String(y)]);var ev=Math.ceil(ticks.length/nl);ticks=ticks.filter(function(k,i){return i%ev===0})}
+  else{var k=Math.max(1,Math.round((N-1)/nl));for(var i=0;i<N;i+=k)ticks.push([tt[i],(span>200?H[i][0].slice(2,7):H[i][0].slice(5)).replace("-","/")])}
+  ticks.forEach(function(k){var x=L+(k[0]-t0)/(t1-t0)*(W-L-R);if(x<W-R-20)s+='<text x="'+x+'" y="'+(Hh-6)+'" font-size="11" fill="var(--text-muted)" text-anchor="'+(x<L+15?"start":"middle")+'">'+k[1]+'</text>'});
+  var hiI=vals.indexOf(hi),loI=vals.indexOf(lo);
+  var ann=function(i,t,up){var a=i<N/5?"start":i>N*4/5?"end":"middle";return '<g class="fade" style="transition-delay:1.4s"><circle cx="'+xs(i)+'" cy="'+ys(vals[i])+'" r="3.5" fill="var(--series-1)" stroke="var(--surface-1)" stroke-width="2"/><text x="'+xs(i)+'" y="'+(ys(vals[i])+(up?-9:16))+'" font-size="12" fill="var(--text-secondary)" text-anchor="'+a+'" style="paint-order:stroke;stroke:var(--surface-1);stroke-width:3px">'+t+'</text></g>'};
+  s+=ann(hiI,"高 "+fmt(hi,hi<100?2:0),true);if(loI!==hiI)s+=ann(loI,"低 "+fmt(lo,lo<100?2:0),false);
+  s+='<line class="cross" y1="'+T+'" y2="'+(vy+VH)+'"/><rect class="lhit" width="'+W+'" height="'+Hh+'" fill="transparent" style="cursor:pointer"/></svg>';
+  box.classList.remove("shown");box.innerHTML=s;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){box.classList.add("shown")})});
+  var hit=box.querySelector(".lhit"),cross=box.querySelector(".cross");
+  var idx=function(e){var r=hit.getBoundingClientRect(),x=e.clientX-r.left,b=0;for(var i=1;i<N;i++)if(Math.abs(xs(i)-x)<Math.abs(xs(b)-x))b=i;return b};
+  hit.addEventListener("pointermove",function(e){var i=idx(e),r=hit.getBoundingClientRect(),c=i?H[i][1]-H[i-1][1]:null;
+    cross.setAttribute("x1",xs(i));cross.setAttribute("x2",xs(i));cross.style.display="block";
+    showTip("<b>"+H[i][0].replace(/-/g,"/")+"　"+fmt(H[i][1],2)+"</b>"+(c==null?"":'<span class="'+(c>0?"up":c<0?"down":"")+'">'+(c>0?"▲":c<0?"▼":"–")+" "+fmt(Math.abs(c),2)+"（"+(c/H[i-1][1]*100).toFixed(2)+"%）</span>")+"<br>"+(range>=ALL.length&&i<N-250?"週收盤｜日均量 ":"成交量 ")+fmt(H[i][2])+" 張",r.left+xs(i),r.top+ys(H[i][1]))});
+  hit.addEventListener("pointerleave",function(){cross.style.display="none";tip.style.display="none"});
+  hit.addEventListener("click",function(e){location.href="/"+H[idx(e)][0]});
+}
+document.querySelectorAll(".rng button").forEach(function(b){b.addEventListener("click",function(){
+  document.querySelectorAll(".rng button").forEach(function(o){o.setAttribute("aria-pressed",o===b)});range=+b.dataset.n;draw()})});
+fetch(box.dataset.src).then(function(r){return r.json()}).then(function(j){ALL=j;draw()});
+var lw=innerWidth;addEventListener("resize",function(){if(innerWidth!==lw){lw=innerWidth;draw()}});
+})();
