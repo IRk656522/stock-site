@@ -3,8 +3,6 @@ name: 往回補資料
 on:
   push:
     paths: ['backfill.json']
-  schedule:
-    - cron: '45 */2 * * *'   # 補資料期間每 2 小時接續一輪；補完後移除
   workflow_dispatch:
 permissions:
   contents: write
